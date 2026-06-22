@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>打菇鬧鐘計算器</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 25px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            width: 100%;
+            max-width: 360px;
+            box-sizing: border-box;
+        }
+        h2 {
+            text-align: center;
+            margin-top: 0;
+            color: #2c3e50;
+            font-size: 22px;
+            margin-bottom: 20px;
+        }
+        .section-title {
+            font-weight: 600;
+            color: #4a5568;
+            margin-bottom: 10px;
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+        }
+        /* 轉盤外殼 */
+        .picker-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 10px 0;
+            margin-bottom: 20px;
+        }
+        /* 單個滾輪的樣式 */
+        .picker-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 30%;
+        }
+        .picker-label {
+            font-size: 11px;
+            color: #a0aec0;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+        select {
+            width: 80%;
+            padding: 8px;
+            font-size: 18px;
+            font-weight: 600;
+            border: 1px solid #cbd5e0;
+            border-radius: 8px;
+            background-color: #fff;
+            text-align: center;
+            cursor: pointer;
+            /* 針對 iOS 優化外觀 */
+            -webkit-appearance: none;
+            appearance: none;
+        }
+        select:focus {
+            outline: none;
+            border-color: #4299e1;
+        }
+        .colon {
+            font-size: 20px;
+            font-weight: bold;
+            color: #a0aec0;
+            padding-top: 15px;
+        }
+        /* 輸出結果 */
+        .result-box {
+            background-color: #ebf8ff;
+            border: 1px solid #bee3f8;
+            padding: 15px;
+            border-radius: 12px;
+            margin-top: 20px;
+            text-align: center;
+        }
+        .result-label {
+            font-size: 13px;
+            color: #2b6cb0;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        .result-time {
+            font-size: 32px;
+            font-weight: 700;
+            color: #2b6cb0;
+            letter-spacing: 1px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>🍄 打菇鬧鐘計算器</h2>
+    
+    <div class="section-title">⏱️ 打菇剩餘時間</div>
+    <div class="picker-container">
+        <div class="picker-group">
+            <span class="picker-label">時</span>
+            <select id="rem-hr"></select>
+        </div>
+        <div class="colon">:</div>
+        <div class="picker-group">
+            <span class="picker-label">分</span>
+            <select id="rem-min"></select>
+        </div>
+        <div class="colon">:</div>
+        <div class="picker-group">
+            <span class="picker-label">秒</span>
+            <select id="rem-sec"></select>
+        </div>
+    </div>
+
+    <div class="section-title">🕒 目前時間 (手填轉盤)</div>
+    <div class="picker-container">
+        <div class="picker-group">
+            <span class="picker-label">時</span>
+            <select id="cur-hr"></select>
+        </div>
+        <div class="colon">:</div>
+        <div class="picker-group">
+            <span class="picker-label">分</span>
+            <select id="cur-min"></select>
+        </div>
+        <div class="colon">:</div>
+        <div class="picker-group">
+            <span class="picker-label">秒</span>
+            <select id="cur-sec"></select>
+        </div>
+    </div>
+
+    <div class="result-box">
+        <div class="result-label">⏰ 設定鬧鐘時間 (+5分鐘)</div>
+        <div id="alarmTime" class="result-time">--:--:--</div>
+    </div>
+</div>
+
+<script>
+    // 生成選項的輔助函式
+    function populateSelect(selectEl, max, defaultVal) {
+        for (let i = 0; i < max; i++) {
+            const opt = document.createElement('option');
+            const valStr = String(i).padStart(2, '0');
+            opt.value = i;
+            opt.textContent = valStr;
+            if (i === defaultVal) opt.selected = true;
+            selectEl.appendChild(opt);
+        }
+    }
+
+    // 取得所有 select 元素
+    const remHr = document.getElementById('rem-hr');
+    const remMin = document.getElementById('rem-min');
+    const remSec = document.getElementById('rem-sec');
+    
+    const curHr = document.getElementById('cur-hr');
+    const curMin = document.getElementById('cur-min');
+    const curSec = document.getElementById('cur-sec');
+    
+    const alarmOutput = document.getElementById('alarmTime');
+
+    // 初始化選項 (時最大 24，分秒最大 60)
+    // 預設值帶入你之前的範例：剩餘 00:02:01，目前 14:01:10
+    populateSelect(remHr, 24, 0);
+    populateSelect(remMin, 60, 2);
+    populateSelect(remSec, 60, 1);
+
+    populateSelect(curHr, 24, 14);
+    populateSelect(curMin, 60, 1);
+    populateSelect(curSec, 60, 10);
+
+    // 計算時間
+    function calculateAlarm() {
+        const rHrs = Number(remHr.value);
+        const rMins = Number(remMin.value);
+        const rSecs = Number(remSec.value);
+
+        const cHrs = Number(curHr.value);
+        const cMins = Number(curMin.value);
+        const cSecs = Number(curSec.value);
+
+        // 總秒數加總（加 5 分鐘固定增加 300 秒）
+        let totalSeconds = (cHrs * 3600 + cMins * 60 + cSecs)
+                         + (rHrs * 3600 + rMins * 60 + rSecs)
+                         + (5 * 60);
+
+        // 跨天處理
+        const secondsInDay = 24 * 3600;
+        totalSeconds = totalSeconds % secondsInDay;
+
+        // 換算回時分秒
+        const alarmHrs = Math.floor(totalSeconds / 3600);
+        const alarmMins = Math.floor((totalSeconds % 3600) / 60);
+        const alarmSecs = totalSeconds % 60;
+
+        // 輸出格式化
+        alarmOutput.innerText = [
+            String(alarmHrs).padStart(2, '0'),
+            String(alarmMins).padStart(2, '0'),
+            String(alarmSecs).padStart(2, '0')
+        ].join(':');
+    }
+
+    // 監聽所有轉盤變動
+    [remHr, remMin, remSec, curHr, curMin, curSec].forEach(select => {
+        select.addEventListener('change', calculateAlarm);
+    });
+
+    // 首次執行初始化計算
+    calculateAlarm();
+</script>
+
+</body>
+</html>
