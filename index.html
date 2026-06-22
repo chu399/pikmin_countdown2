@@ -73,7 +73,6 @@
             background-color: #fff;
             text-align: center;
             cursor: pointer;
-            /* 針對 iOS 優化外觀 */
             -webkit-appearance: none;
             appearance: none;
         }
@@ -107,6 +106,27 @@
             font-weight: 700;
             color: #2b6cb0;
             letter-spacing: 1px;
+            margin-bottom: 15px;
+        }
+        /* 跳轉捷徑按鈕樣式 */
+        .alarm-btn {
+            display: inline-block;
+            width: 100%;
+            background-color: #319795;
+            color: white;
+            border: none;
+            padding: 14px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            box-sizing: border-box;
+            text-decoration: none;
+            transition: background-color 0.2s;
+            box-shadow: 0 2px 4px rgba(49, 151, 149, 0.2);
+        }
+        .alarm-btn:active {
+            background-color: #234e52;
         }
     </style>
 </head>
@@ -154,13 +174,13 @@
     <div class="result-box">
         <div class="result-label">⏰ 設定鬧鐘時間 (+5分鐘)</div>
         <div id="alarmTime" class="result-time">--:--:--</div>
+        <button class="alarm-btn" onclick="runAlarmShortcut()">👉 自動設定 iPhone 鬧鐘</button>
     </div>
 </div>
 
 <script>
-    // 生成選項的輔助函式
     function populateSelect(selectEl, max, defaultVal) {
-        selectEl.innerHTML = ''; // 清空舊選項
+        selectEl.innerHTML = '';
         for (let i = 0; i < max; i++) {
             const opt = document.createElement('option');
             const valStr = String(i).padStart(2, '0');
@@ -171,59 +191,42 @@
         }
     }
 
-    // 取得所有 select 元素
     const remHr = document.getElementById('rem-hr');
     const remMin = document.getElementById('rem-min');
     const remSec = document.getElementById('rem-sec');
-    
     const curHr = document.getElementById('cur-hr');
     const curMin = document.getElementById('cur-min');
     const curSec = document.getElementById('cur-sec');
-    
     const alarmOutput = document.getElementById('alarmTime');
 
-    // 取得當前系統時間
+    // 自動初始化目前時間
     const now = new Date();
-    const currentHour = now.getHours();
-    const currentMinute = now.getMinutes();
-    const currentSecond = now.getSeconds();
-
-    // 初始化選項
-    // 「打菇剩餘時間」預設為 00:02:01
     populateSelect(remHr, 24, 0);
     populateSelect(remMin, 60, 2);
     populateSelect(remSec, 60, 1);
+    populateSelect(curHr, 24, now.getHours());
+    populateSelect(curMin, 60, now.getMinutes());
+    populateSelect(curSec, 60, now.getSeconds());
 
-    // 「目前時間」動態代入當下系統時間
-    populateSelect(curHr, 24, currentHour);
-    populateSelect(curMin, 60, currentMinute);
-    populateSelect(curSec, 60, currentSecond);
-
-    // 計算時間
     function calculateAlarm() {
         const rHrs = Number(remHr.value);
         const rMins = Number(remMin.value);
         const rSecs = Number(remSec.value);
-
         const cHrs = Number(curHr.value);
         const cMins = Number(curMin.value);
         const cSecs = Number(curSec.value);
 
-        // 總秒數加總（包含內部額外增加的 5 分鐘 = 300 秒）
         let totalSeconds = (cHrs * 3600 + cMins * 60 + cSecs)
                          + (rHrs * 3600 + rMins * 60 + rSecs)
                          + (5 * 60);
 
-        // 跨天處理
         const secondsInDay = 24 * 3600;
         totalSeconds = totalSeconds % secondsInDay;
 
-        // 換算回時分秒
         const alarmHrs = Math.floor(totalSeconds / 3600);
         const alarmMins = Math.floor((totalSeconds % 3600) / 60);
         const alarmSecs = totalSeconds % 60;
 
-        // 輸出格式化
         alarmOutput.innerText = [
             String(alarmHrs).padStart(2, '0'),
             String(alarmMins).padStart(2, '0'),
@@ -231,12 +234,23 @@
         ].join(':');
     }
 
-    // 監聽所有轉盤變動
+    // 觸發 iPhone 捷徑並傳遞時間參數
+    function runAlarmShortcut() {
+        const alarmTimeText = alarmOutput.innerText;
+        if (alarmTimeText === '--:--:--') return;
+
+        // 捷徑名稱固定為「打菇鬧鐘」
+        const shortcutName = encodeURIComponent('打菇鬧鐘');
+        const inputParam = encodeURIComponent(alarmTimeText);
+
+        // 透過 URL Scheme 喚醒捷徑
+        window.location.href = `shortcuts://run-shortcut?name=${shortcutName}&input=${inputParam}`;
+    }
+
     [remHr, remMin, remSec, curHr, curMin, curSec].forEach(select => {
         select.addEventListener('change', calculateAlarm);
     });
 
-    // 首次執行初始化計算
     calculateAlarm();
 </script>
 
