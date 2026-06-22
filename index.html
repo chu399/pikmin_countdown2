@@ -133,7 +133,7 @@
         </div>
     </div>
 
-    <div class="section-title">🕒 目前時間 (手填轉盤)</div>
+    <div class="section-title">🕒 目前時間 (自動生成/可微調)</div>
     <div class="picker-container">
         <div class="picker-group">
             <span class="picker-label">時</span>
@@ -160,6 +160,7 @@
 <script>
     // 生成選項的輔助函式
     function populateSelect(selectEl, max, defaultVal) {
+        selectEl.innerHTML = ''; // 清空舊選項
         for (let i = 0; i < max; i++) {
             const opt = document.createElement('option');
             const valStr = String(i).padStart(2, '0');
@@ -181,15 +182,22 @@
     
     const alarmOutput = document.getElementById('alarmTime');
 
-    // 初始化選項 (時最大 24，分秒最大 60)
-    // 預設值帶入你之前的範例：剩餘 00:02:01，目前 14:01:10
+    // 取得當前系統時間
+    const now = new Date();
+    const currentHour = now.getHours();
+    const currentMinute = now.getMinutes();
+    const currentSecond = now.getSeconds();
+
+    // 初始化選項
+    // 「打菇剩餘時間」預設為 00:02:01
     populateSelect(remHr, 24, 0);
     populateSelect(remMin, 60, 2);
     populateSelect(remSec, 60, 1);
 
-    populateSelect(curHr, 24, 14);
-    populateSelect(curMin, 60, 1);
-    populateSelect(curSec, 60, 10);
+    // 「目前時間」動態代入當下系統時間
+    populateSelect(curHr, 24, currentHour);
+    populateSelect(curMin, 60, currentMinute);
+    populateSelect(curSec, 60, currentSecond);
 
     // 計算時間
     function calculateAlarm() {
@@ -201,7 +209,7 @@
         const cMins = Number(curMin.value);
         const cSecs = Number(curSec.value);
 
-        // 總秒數加總（加 5 分鐘固定增加 300 秒）
+        // 總秒數加總（包含內部額外增加的 5 分鐘 = 300 秒）
         let totalSeconds = (cHrs * 3600 + cMins * 60 + cSecs)
                          + (rHrs * 3600 + rMins * 60 + rSecs)
                          + (5 * 60);
